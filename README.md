@@ -32,8 +32,8 @@ flowchart TB
     end
 
     subgraph Hub["☁️ AZURE — Virtual WAN Hub (Standard)"]
-        ERGW["ExpressRoute GW<br/>⚠️ ③ 1K IPv4 outbound (GW→MSEE)<br/>④ 9,500 routes learned (ErGwScale)<br/>⑤ 20 Gbps aggregate per hub"]
-        VPNGW["S2S VPN GW<br/>BGP-over-IPsec<br/>⑨ 4,000 aggregate BGP routes per GW<br/>⑦ 20 Gbps aggregate / 1 Gbps per tunnel"]
+        ERGW["ExpressRoute GW<br/>⚠️ ③ 1K IPv4 outbound (GW→MSEE)<br/>④ 9,500 routes learned (ErGwScale)"]
+        VPNGW["S2S VPN GW<br/>BGP-over-IPsec<br/>⑦ 4,000 aggregate BGP routes per GW"]
         ENGINE{{"🔴 vWAN Hub Route Engine<br/>~10,000 effective routes total"}}
     end
 
@@ -49,11 +49,11 @@ flowchart TB
     ERGW -->|"③ HARD CAP 1,000 IPv4<br/>(Azure → on-prem advertise)"| MSEE
     ERGW <--> ENGINE
 
-    B2 <-->|"⑨ BGP-over-IPsec<br/>4,000 routes per VPN GW (aggregate)"| VPNGW
+    B2 <-->|"⑦ BGP-over-IPsec<br/>4,000 routes per VPN GW (aggregate)"| VPNGW
     VPNGW <--> ENGINE
 
     B3 -->|"SD-WAN overlay<br/>+ S2S IPsec"| SA
-    SA <-->|"⑪ 8 BGP peers max per hub<br/>⑫ per-peer bounded by remaining ① capacity"| ENGINE
+    SA <-->|"⑨ 8 BGP peers max per hub<br/>⑩ per-peer bounded by remaining ① capacity"| ENGINE
 
     ENGINE <-->|"VNet peering"| SB
     ENGINE <-->|"VNet peering"| SC
@@ -77,18 +77,18 @@ All limits below cite the official Microsoft documentation — see [References](
 | ② | **CE → MSEE (ER circuit, private peering)** | **4,000 IPv4 (Local/Standard)** / **10,000 IPv4 (Premium)** ; **100 IPv6** ; **200** to Microsoft peering | Circuit BGP session drops |
 | ③ | **ER Gateway → MSEE (outbound)** ⚠️ | **1,000 IPv4** / **100 IPv6** VNet routes advertised by the GW to the circuit | ER GW BGP drops → ER attachment down |
 | ④ | **ER Gateway inbound route learning** | Std/ERGw1Az: **4,000** ; HighPerf/ERGw2Az: **9,500** ; Ultra/ErGw3Az: **9,500** ; **ErGwScale (vWAN): 9,500 total per GW** | Routes truncated; BGP may drop |
-| ⑤ | **vWAN ER GW aggregate throughput** | **20 Gbps** per hub | Throughput throttled |
-| ⑥ | **ER circuit connections per hub** | **8 circuits** per hub | Cannot attach more |
-| ⑦ | **vWAN S2S VPN GW aggregate throughput** | **20 Gbps** per hub ; **2 Gbps per VPN connection** (1 Gbps/IPsec tunnel) | Throughput throttled |
-| ⑧ | **VPN (branch) connections per hub** | **1,000** | Cannot connect more branches |
-| ⑨ | **Aggregate BGP routes per VPN gateway** | **4,000** per VPN gateway (not per session) | Routes truncated; session may drop |
-| ⑩ | **Local Network Gateway prefixes (per LNG)** | **1,000** | Extra prefixes ignored |
-| ⑪ | **NVA-in-spoke BGP peers per vWAN hub** | **8 peers max** (hub-wide) | Cannot add more peers |
-| ⑫ | **Routes per NVA BGP peer** | Bounded by remaining ① capacity. Example from docs: if hub already holds 6,000 routes, a new NVA peer can advertise only 4,000 | Routes truncated; BGP flaps |
-| ⑬ | **VNet connections per hub** (no Routing Intent) | **500 minus total number of hubs** in the Virtual WAN | Cannot attach more spokes |
-| ⑭ | **Address spaces per hub** (with Routing Intent + private policies) | **600 per hub** across all directly connected VNets | Extra address spaces not advertised |
-| ⑮ | **VM workload per hub** | **2,000** across all connected VNets | Performance degradation |
-| ⑯ | **Hub router VNet-to-VNet transit** | **50 Gbps** aggregate | Throughput throttled |
+| ⑤ | **ER circuit connections per hub** | **8 circuits** per hub | Cannot attach more |
+| ⑥ | **VPN (branch) connections per hub** | **1,000** | Cannot connect more branches |
+| ⑦ | **Aggregate BGP routes per VPN gateway** | **4,000** per VPN gateway (not per session) | Routes truncated; session may drop |
+| ⑧ | **Local Network Gateway prefixes (per LNG)** | **1,000** | Extra prefixes ignored |
+| ⑨ | **NVA-in-spoke BGP peers per vWAN hub** | **8 peers max** (hub-wide) | Cannot add more peers |
+| ⑩ | **Routes per NVA BGP peer** | Bounded by remaining ① capacity. Example from docs: if hub already holds 6,000 routes, a new NVA peer can advertise only 4,000 | Routes truncated; BGP flaps |
+| ⑪ | **VNet connections per hub** (no Routing Intent) | **500 minus total number of hubs** in the Virtual WAN | Cannot attach more spokes |
+| ⑫ | **Address spaces per hub** (with Routing Intent + private policies) | **600 per hub** across all directly connected VNets | Extra address spaces not advertised |
+
+> ⚠️ The **ER Gateway → MSEE** hop (③) is the **most under-appreciated cap** — the GW can only advertise **1,000 IPv4 prefixes** out to the MSEE, regardless of the circuit SKU. Exceed it and the BGP session drops — taking the whole ER attachment with it, even on a Premium 10k circuit.
+>
+> 📌 **Additional constraint:** when **Branch-to-Branch is enabled with Azure Route Server**, the **total routes advertised from VNet address space + Route Server toward the ExpressRoute circuit must not exceed 1,000** ([source](https://learn.microsoft.com/azure/azure-resource-manager/management/azure-subscription-service-limits#azure-expressroute-limits)).
 
 > ⚠️ The **ER Gateway → MSEE** hop (③) is the **most under-appreciated cap** — the GW can only advertise **1,000 IPv4 prefixes** out to the MSEE, regardless of the circuit SKU. Exceed it and the BGP session drops — taking the whole ER attachment with it, even on a Premium 10k circuit.
 >
@@ -101,8 +101,8 @@ All limits below cite the official Microsoft documentation — see [References](
 ```mermaid
 flowchart LR
     A["ER inbound from on-prem<br/>≤ 4,000 Std / 10,000 Prem (②)<br/>further capped by ④ 9,500 at GW"] --> H{{"① vWAN Hub<br/>10,000 routes hard ceiling"}}
-    B["VPN BGP<br/>≤ 4,000 per VPN GW aggregate (⑨)"] --> H
-    C["SD-WAN NVA BGP<br/>up to 8 peers (⑪), each bounded<br/>by remaining hub capacity (⑫) 🔥 dominant"] --> H
+    B["VPN BGP<br/>≤ 4,000 per VPN GW aggregate (⑦)"] --> H
+    C["SD-WAN NVA BGP<br/>up to 8 peers (⑨), each bounded<br/>by remaining hub capacity (⑩) 🔥 dominant"] --> H
 
     H --> X[["🚨 Hard ceiling: 10,000 routes<br/>Exceed → BGP flaps<br/>routes not injected/installed"]]
 
@@ -162,13 +162,13 @@ flowchart TB
 |---|---|---|
 | **ER GW → MSEE** (③ 1k cap on Azure-advertised prefixes) | — (this is Azure-side) | **[1][4]** Aggregate VNet/hub prefixes before re-advertise; **[3]** deny /32s |
 | **On-prem CE → MSEE** (② 4k Std / 10k Prem) | **[1]** Summarize aggressively on-prem | **[3]** Deny /32s and host routes as safety net |
-| **VPN → VPN GW** (⑨ 4k aggregate per VPN GW) | **[2]** Disjoint — VPN carries only branches NOT reachable via ER | **[3]** Deny anything overlapping ER advertisements |
-| **SD-WAN NVA → vHub** (⑪ 8 peers; ⑫ per-peer bounded by remaining ① capacity) | **[1]** Summarize overlay prefixes at the NVA | **[3]** Community-match to drop SD-WAN routes duplicating ER/VPN |
+| **VPN → VPN GW** (⑦ 4k aggregate per VPN GW) | **[2]** Disjoint — VPN carries only branches NOT reachable via ER | **[3]** Deny anything overlapping ER advertisements |
+| **SD-WAN NVA → vHub** (⑨ 8 peers; ⑩ per-peer bounded by remaining ① capacity) | **[1]** Summarize overlay prefixes at the NVA | **[3]** Community-match to drop SD-WAN routes duplicating ER/VPN |
 | **Hub → spokes & branches** | — | **[4]** Use vWAN route-maps to re-aggregate prefixes before advertising out (reduces branch device RIB load) |
 
 ### Golden Rule
 
-> **Filter as close to the source as possible.** Every prefix stopped on-prem is a prefix that never consumes a slot at ③ (1k outbound), ④ (9,500 ER GW learned), ⑨ (4k VPN GW aggregate), or ① (10k hub ceiling). Azure-side route-maps are your **safety net**, not your primary defense.
+> **Filter as close to the source as possible.** Every prefix stopped on-prem is a prefix that never consumes a slot at ③ (1k outbound), ④ (9,500 ER GW learned), ⑦ (4k VPN GW aggregate), or ① (10k hub ceiling). Azure-side route-maps are your **safety net**, not your primary defense.
 
 ---
 

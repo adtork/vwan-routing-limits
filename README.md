@@ -154,7 +154,7 @@ flowchart TB
 | Path | On-prem lever | Azure lever |
 |---|---|---|
 | **ER GW → MSEE** (③ 1k cap on Azure-advertised prefixes) | — (this is Azure-side) | **[4]** Apply **inbound route-maps on VNet connections** to aggregate spoke prefixes (e.g., 50 × /24 → 1 × /16) **before they are re-advertised out the ER GW to the MSEE** — each aggregated prefix consumes one slot in the 1k outbound cap instead of many; critical when approaching ⑪ 500 spokes/hub. **[3]** deny /32s and host routes |
-| **On-prem CE → MSEE** (② 4k Std / 10k Prem) | **[1]** Summarize aggressively on-prem | **[3]** Deny /32s and host routes as safety net |
+| **On-prem CE → MSEE** (② 4k Std / 10k Prem) | **[1]** Summarize aggressively on-prem (or advertise supernets toward Azure) | **[3]** Inbound route-map on the ER connection to block unwanted prefixes; **[4]** inbound route-map to aggregate incoming prefixes before they enter the hub route table |
 | **VPN → VPN GW** (⑦ 4k aggregate per VPN GW) | **[2]** Disjoint — VPN carries only branches NOT reachable via ER | **[3]** Deny anything overlapping ER advertisements |
 | **SD-WAN NVA → vHub** (⑨ 8 peers; ⑩ per-peer bounded by remaining ① capacity) | **[1]** Summarize overlay prefixes at the NVA | **[3]** Community-match to drop SD-WAN routes duplicating ER/VPN |
 | **Hub → spokes & branches** | — | **[4]** Use vWAN route-maps to re-aggregate prefixes before advertising out (reduces branch device RIB load) |

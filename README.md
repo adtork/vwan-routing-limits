@@ -87,12 +87,6 @@ All limits below cite the official Microsoft documentation — see [References](
 | ⑫ | **Address spaces per hub** (with Routing Intent + private policies) | **600 per hub** across all directly connected VNets | Extra address spaces not advertised |
 
 > ⚠️ The **ER Gateway → MSEE** hop (③) is the **most under-appreciated cap** — the GW can only advertise **1,000 IPv4 prefixes** out to the MSEE, regardless of the circuit SKU. Exceed it and the BGP session drops — taking the whole ER attachment with it, even on a Premium 10k circuit.
->
-> 📌 **Additional constraint:** when **Branch-to-Branch is enabled with Azure Route Server**, the **total routes advertised from VNet address space + Route Server toward the ExpressRoute circuit must not exceed 1,000** ([source](https://learn.microsoft.com/azure/azure-resource-manager/management/azure-subscription-service-limits#azure-expressroute-limits)).
-
-> ⚠️ The **ER Gateway → MSEE** hop (③) is the **most under-appreciated cap** — the GW can only advertise **1,000 IPv4 prefixes** out to the MSEE, regardless of the circuit SKU. Exceed it and the BGP session drops — taking the whole ER attachment with it, even on a Premium 10k circuit.
->
-> 📌 **Additional constraint:** when **Branch-to-Branch is enabled with Azure Route Server**, the **total routes advertised from VNet address space + Route Server toward the ExpressRoute circuit must not exceed 1,000** ([source](https://learn.microsoft.com/azure/azure-resource-manager/management/azure-subscription-service-limits#azure-expressroute-limits)).
 
 ---
 

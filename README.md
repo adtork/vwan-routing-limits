@@ -53,7 +53,7 @@ flowchart TB
     VPNGW <--> ENGINE
 
     B3 -->|"SD-WAN overlay<br/>+ S2S IPsec"| SA
-    SA <-->|"⑩ 4 BGP peers max<br/>⑪ 10,000 per peer"| ENGINE
+    SA <-->|"⑩ 8 BGP peers max (hub-wide)<br/>⑪ up to 10,000 per peer<br/>(bounded by remaining hub capacity)"| ENGINE
 
     ENGINE <-->|"VNet peering"| SB
     ENGINE <-->|"VNet peering"| SC
@@ -80,8 +80,8 @@ flowchart TB
 | ⑦ | **VPN sites per hub** | 1,000 sites | Cannot connect more branches |
 | ⑧ | **BGP peers per VPN link** | 2 (1 per tunnel) | — |
 | ⑨ | **Prefixes per VPN BGP session** | ~4,000 | Session drops |
-| ⑩ | **VNet-NVA BGP peers per hub** | **4 peers max** | Cannot add more SD-WAN peers |
-| ⑪ | **Routes per NVA BGP peer** | 10,000 (still capped by ①) | Routes truncated |
+| ⑩ | **VNet-NVA BGP peers per hub** | **8 peers max** (hub-wide) | Cannot add more SD-WAN peers |
+| ⑪ | **Routes per NVA BGP peer** | Up to 10,000 — but bounded by remaining ① capacity (e.g., if hub already has 6,000 routes, new peer can advertise only 4,000) | Routes truncated; BGP flaps |
 | ⑫ | **VNet connections per hub** | 500 | Cannot attach more spokes |
 | ⑬ | **Prefixes per VNet connection** | 200 | Extra prefixes ignored |
 

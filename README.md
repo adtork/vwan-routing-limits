@@ -125,8 +125,8 @@ flowchart TB
     end
 
     subgraph AZ["☁️ AZURE (vWAN-controlled)"]
-        A1["[3] vWAN route-map (inbound deny)<br/>Drop /32s, lab prefixes,<br/>community-tagged noise"]
-        A2["[4] Azure-side summarization<br/>vWAN route-maps aggregate prefixes<br/>entering/leaving the hub<br/>(no NVA required)"]
+        A1["[3] vWAN route-map (inbound deny)<br/>Drop unwanted prefixes from<br/>on-prem at the hub connection"]
+        A2["[4] Azure-side aggregation<br/>vWAN route-maps aggregate prefixes<br/>entering the hub (from on-prem) or<br/>leaving the hub (VNet spoke prefixes<br/>toward on-prem — keeps ER GW→MSEE<br/>under the 1k cap)"]
     end
 
     O1 --> HUB[("vWAN Hub<br/>① 10k ceiling")]
@@ -146,8 +146,8 @@ flowchart TB
 |---|---|---|---|---|
 | **[1]** | **Summarization / supernets** | On-prem CE | Aggregate contiguous prefixes (e.g. 256 × /24 → 1 × /16) | Requires disciplined IPAM; M&A sprawl breaks aggregation |
 | **[2]** | **Disjoint prefixes / LPM split** | On-prem CE / SD-WAN | Each path carries a different slice of address space, or use more-specifics to steer | Failover must be planned — who covers the gap if a path drops? |
-| **[3]** | **vWAN route-map (inbound)** | Azure hub connection | Deny by prefix, AS-path, or BGP community at the hub ingress | Per-connection config; easy to miss one ingress |
-| **[4]** | **Azure-side summarization (route-maps)** | vWAN hub connection (inbound or outbound) | Native vWAN route-maps aggregate prefixes — no NVA needed. See [route-maps overview](https://learn.microsoft.com/azure/virtual-wan/route-maps-about) | Loses granularity for troubleshooting and failover |
+| **[3]** | **vWAN route-map (inbound deny)** | Azure hub connection | Drop unwanted prefixes inbound from on-prem at the hub ingress | Per-connection config; easy to miss one ingress |
+| **[4]** | **Azure-side aggregation (route-maps)** | vWAN hub connection (inbound or outbound) | Inbound: aggregate on-prem prefixes entering the hub. Outbound: aggregate VNet spoke prefixes leaving the hub toward on-prem so the ER GW→MSEE 1k cap isn't exceeded. See [route-maps overview](https://learn.microsoft.com/azure/virtual-wan/route-maps-about) | Loses granularity for troubleshooting and failover |
 
 ### Per-Path Recommendation
 

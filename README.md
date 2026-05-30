@@ -53,7 +53,7 @@ flowchart TB
     VPNGW <--> ENGINE
 
     B3 -->|"SD-WAN overlay<br/>+ S2S IPsec"| SA
-    SA <-->|"⑩ 4 peers max<br/>⑪ 10,000 per peer"| ENGINE
+    SA <-->|"⑩ 4 BGP peers max<br/>⑪ 10,000 per peer"| ENGINE
 
     ENGINE <-->|"VNet peering"| SB
     ENGINE <-->|"VNet peering"| SC

@@ -100,7 +100,7 @@ flowchart LR
 
     H --> X[["🚨 Hard ceiling: 10,000 routes<br/>Exceed → BGP flaps<br/>routes not injected/installed"]]
 
-    note["Plain VNet peering (Spokes B, C)<br/>contributes NO BGP routes<br/>— only the spoke's own address space"]
+    note["Plain VNet peering (Spokes B, C) doesn't run BGP,<br/>but each spoke's address space IS injected into<br/>the hub route table — counting toward ① (10k hub)<br/>AND ③ (1k outbound to MSEE).<br/>Up to ⑪ 500 spokes per hub → 500 prefixes consumed.<br/>Mitigate with [4] inbound route-maps on VNet<br/>connections to aggregate before injection."]
 
     classDef danger fill:#fee,stroke:#900,stroke-width:2px,color:#900
     classDef info fill:#e0f2fe,stroke:#0369a1,color:#0c4a6e
@@ -110,7 +110,7 @@ flowchart LR
 
 Worst-case if every BGP source advertises at its cap (Premium ER) → ~24,000 routes converging on a **10,000-route hard ceiling**. Once the hub exceeds 10k, **BGP sessions flap and routes are not injected or installed** — silent reachability loss. **Filtering at ingress is mandatory, not optional.**
 
-> Note: the **1K cap on the ER GW is outbound only** (GW → MSEE). It limits what Azure advertises *out* to on-prem — it does **not** bound how many on-prem routes the hub *receives*. Inbound from on-prem is bounded by the circuit SKU (② 4k Std / 10k Prem).
+> 📌 **Spoke VNet address spaces count too.** Plain VNet peering doesn't run BGP, but each connected spoke's address space **is injected into the hub route table** and **re-advertised out the ER GW to the MSEE**, where it consumes a slot in the **1,000 IPv4 outbound cap (③)**. With up to **500 spokes per hub (⑪)**, that's potentially **500 prefixes** burned on Azure-side advertisements before any on-prem-bound traffic engineering. Mitigate with **[4] inbound route-maps on VNet connections** to aggregate spoke prefixes (e.g., collapse 50 spoke /24s into one /16) before they enter the hub route table.
 
 ---
 
@@ -154,7 +154,7 @@ flowchart TB
 
 | Path | On-prem lever | Azure lever |
 |---|---|---|
-| **ER GW → MSEE** (③ 1k cap on Azure-advertised prefixes) | — (this is Azure-side) | **[1][4]** Aggregate VNet/hub prefixes before re-advertise; **[3]** deny /32s |
+| **ER GW → MSEE** (③ 1k cap on Azure-advertised prefixes) | — (this is Azure-side) | **[4]** Apply **inbound route-maps on VNet connections** to aggregate spoke prefixes (e.g., 50 × /24 → 1 × /16) before they enter the hub route table — critical when approaching ⑪ 500 spokes/hub; **[3]** deny /32s and host routes |
 | **On-prem CE → MSEE** (② 4k Std / 10k Prem) | **[1]** Summarize aggressively on-prem | **[3]** Deny /32s and host routes as safety net |
 | **VPN → VPN GW** (⑦ 4k aggregate per VPN GW) | **[2]** Disjoint — VPN carries only branches NOT reachable via ER | **[3]** Deny anything overlapping ER advertisements |
 | **SD-WAN NVA → vHub** (⑨ 8 peers; ⑩ per-peer bounded by remaining ① capacity) | **[1]** Summarize overlay prefixes at the NVA | **[3]** Community-match to drop SD-WAN routes duplicating ER/VPN |

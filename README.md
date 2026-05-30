@@ -159,6 +159,8 @@ flowchart TB
 | **SD-WAN NVA → vHub** (⑨ 8 peers; ⑩ per-peer bounded by remaining ① capacity) | **[1]** Aggregate overlay prefix advertisements on the SD-WAN device toward Azure (supernets where possible) | **[3]** Inbound route-map on the NVA BGP connection to drop unwanted prefixes; **[4]** inbound route-map to aggregate incoming prefixes before they enter the hub route table |
 | **Hub → spokes & branches** | — | **[4]** Use vWAN route-maps to re-aggregate prefixes before advertising out (reduces branch device RIB load) |
 
+> **💡 Cross-path lever — disjoint prefixes / LPM steering across ExR, VPN, and SD-WAN:** Across the three on-prem paths (ExpressRoute, S2S VPN, SD-WAN NVA), you can also offload one gateway by advertising **disjoint** prefix sets per path, or by using **longest-prefix match (LPM)** to shift specific destinations onto a lighter-loaded GW. For example, advertise **more-specific** prefixes over SD-WAN or VPN so those destinations are pulled off the ExpressRoute GW (relieving ③ 1k outbound / ④ 9,500 inbound), while keeping the supernet over ExR as a fallback. This trades the load between ⑦ (VPN GW 4k aggregate), ⑨/⑩ (NVA peers + per-peer share of ①), and the ER GW caps — pick the GW with the most headroom for each prefix block.
+
 ### Golden Rule
 
 > **Filter as close to the source as possible.** Every prefix stopped on-prem is a prefix that never consumes a slot at ③ (1k outbound), ④ (9,500 ER GW learned), ⑦ (4k VPN GW aggregate), or ① (10k hub ceiling). Azure-side route-maps are your **safety net**, not your primary defense.

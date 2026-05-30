@@ -32,7 +32,7 @@ flowchart TB
     end
 
     subgraph Hub["☁️ AZURE — Virtual WAN Hub (Standard)"]
-        ERGW["ExpressRoute GW<br/>⚠️ 1,000 prefix cap<br/>1 SU = 2 Gbps / max 20 Gbps"]
+        ERGW["ExpressRoute GW<br/>⚠️ 1K prefix cap outbound (GW→MSEE)<br/>1 SU = 2 Gbps / max 20 Gbps"]
         VPNGW["S2S VPN GW<br/>BGP-over-IPsec<br/>~4k per session / 20 Gbps"]
         ENGINE{{"🔴 vWAN Hub Route Engine<br/>~10,000 effective routes total"}}
     end
@@ -93,18 +93,23 @@ flowchart TB
 
 ```mermaid
 flowchart LR
-    A["ER path<br/>≤ 1,000 (③ pinch)"] --> H{{"① vWAN Hub<br/>10,000 ceiling"}}
+    A["ER inbound from on-prem<br/>≤ 4,000 Std / 10,000 Prem (②)"] --> H{{"① vWAN Hub<br/>10,000 ceiling"}}
     B["VPN BGP<br/>≤ 4,000 (⑨)"] --> H
     C["SD-WAN NVA BGP<br/>≤ 10,000 (⑪) 🔥 dominant"] --> H
-    D["VNet conns ×3<br/>≤ 600 (⑬)"] --> H
 
-    H --> X[["Σ theoretical = 15,600<br/>✗ OVER by 56%"]]
+    H --> X[["Σ theoretical = up to 24,000<br/>✗ OVER by 140%"]]
+
+    note["Plain VNet peering (Spokes B, C)<br/>contributes NO BGP routes<br/>— only the spoke's own address space"]
 
     classDef danger fill:#fee,stroke:#900,stroke-width:2px,color:#900
+    classDef info fill:#e0f2fe,stroke:#0369a1,color:#0c4a6e
     class X,H danger
+    class note info
 ```
 
-Worst-case if every source advertises at its cap → ~15,600 routes against a 10,000 ceiling. **Filtering at ingress is mandatory, not optional.**
+Worst-case if every BGP source advertises at its cap (Premium ER) → ~24,000 routes against a 10,000 ceiling. **Filtering at ingress is mandatory, not optional.**
+
+> Note: the **1K cap on the ER GW is outbound only** (GW → MSEE). It limits what Azure advertises *out* to on-prem — it does **not** bound how many on-prem routes the hub *receives*. Inbound from on-prem is bounded by the circuit SKU (② 4k Std / 10k Prem).
 
 ---
 

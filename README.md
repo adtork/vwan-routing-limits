@@ -39,8 +39,8 @@ flowchart TB
 
     subgraph Spokes["📦 SPOKE VNETs"]
         SA["Spoke A<br/>SD-WAN NVA<br/>ASN 65020"]
-        SB["Spoke B<br/>IaaS VMs<br/>(plain VNet peering)"]
-        SC["Spoke C<br/>IaaS VMs<br/>(plain VNet peering)"]
+        SB["Spoke B<br/>IaaS VMs<br/>(plain VNet peering — no BGP,<br/>but address space injected<br/>→ counts toward ① and ③)"]
+        SC["Spoke C<br/>IaaS VMs<br/>(plain VNet peering — no BGP,<br/>but address space injected<br/>→ counts toward ① and ③)"]
     end
 
     B1 -->|"② BGP inbound<br/>Std 4k / Prem 10k IPv4"| ERC

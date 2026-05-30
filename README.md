@@ -96,11 +96,10 @@ All limits below cite the official Microsoft documentation — see [References](
 flowchart LR
     A["ER inbound from on-prem<br/>≤ 4,000 Std / 10,000 Prem (②)<br/>further capped by ④ 9,500 at GW"] --> H{{"① vWAN Hub<br/>10,000 routes hard ceiling"}}
     B["VPN BGP<br/>≤ 4,000 per VPN GW aggregate (⑦)"] --> H
-    C["SD-WAN NVA BGP<br/>up to 8 peers (⑨), each bounded<br/>by remaining hub capacity (⑩) 🔥 dominant"] --> H
+    C["SD-WAN NVA BGP<br/>up to 8 peers (⑨), each bounded<br/>by remaining hub capacity (⑩) 🔥 dominant"] -->|"VNet peering<br/>(NVA in spoke)"| H
+    note["Plain VNet peering (Spokes B, C) doesn't run BGP,<br/>but each spoke's address space IS injected into<br/>the hub route table — counting toward ① (10k hub)<br/>AND ③ (1k outbound to MSEE).<br/>Up to ⑪ 500 spokes per hub → 500 prefixes consumed.<br/>Mitigate with [4] inbound route-maps on VNet<br/>connections to aggregate before injection."] -->|"VNet peering"| H
 
     H --> X[["🚨 Hard ceiling: 10,000 routes<br/>Exceed → BGP flaps<br/>routes not injected/installed"]]
-
-    note["Plain VNet peering (Spokes B, C) doesn't run BGP,<br/>but each spoke's address space IS injected into<br/>the hub route table — counting toward ① (10k hub)<br/>AND ③ (1k outbound to MSEE).<br/>Up to ⑪ 500 spokes per hub → 500 prefixes consumed.<br/>Mitigate with [4] inbound route-maps on VNet<br/>connections to aggregate before injection."]
 
     classDef danger fill:#fee,stroke:#900,stroke-width:2px,color:#900
     classDef info fill:#e0f2fe,stroke:#0369a1,color:#0c4a6e

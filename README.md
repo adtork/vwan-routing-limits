@@ -163,7 +163,7 @@ flowchart TB
 
 ### Golden Rule
 
-> **Filter as close to the source as possible.** Every prefix stopped on-prem is a prefix that never consumes a slot at ③ (1k outbound), ④ (9,500 ER GW learned), ⑦ (4k VPN GW aggregate), or ① (10k hub ceiling). Azure-side route-maps are your **safety net**, not your primary defense.
+> **Filter as close to the source as possible.** Every prefix stopped on-prem is a prefix that never consumes a slot at ④ (9,500 ER GW learned), ⑦ (4k VPN GW aggregate), or ① (10k hub ceiling). ③ (1k ER GW → MSEE outbound) is the mirror case — it's relieved by aggregating **VNet spoke prefixes on the Azure side** before they leave the hub. Azure-side route-maps are your **safety net**, not your primary defense.
 
 ---
 

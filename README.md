@@ -1,6 +1,6 @@
 # Azure Virtual WAN — Routing Limits & Mitigation Playbook
 
-> A practical, contention-point-by-contention-point guide to understanding **where routes are dropped, throttled, or silently lost** in a multi-branch Azure Virtual WAN deployment combining **ExpressRoute, BGP-over-IPsec S2S VPN, and an SD-WAN NVA in a spoke VNet** — and how to mitigate the limits from both the on-prem and Azure sides.
+> This document provides a structured analysis of routing constraints in an Azure Virtual WAN deployment that integrates ExpressRoute, BGP-over-IPsec site-to-site VPN, and a spoke-hosted SD-WAN network virtual appliance (NVA). Each contention point in the data and control plane is examined to identify where route advertisements may be discarded, capped, or fail to install, and corresponding mitigation strategies are presented for both the on-premises and Azure-side components of the architecture.
 
 ---
 

@@ -43,20 +43,21 @@ flowchart TB
         SC["Spoke C<br/>IaaS VMs"]
     end
 
-    B1 -->|"② BGP<br/>Std 4k / Prem 10k"| ERC
-    ERC --> MSEE
-    MSEE -->|"③ HARD CAP 1,000"| ERGW
-    ERGW --> ENGINE
+    B1 -->|"② BGP inbound<br/>Std 4k / Prem 10k"| ERC
+    ERC <--> MSEE
+    MSEE --> ERGW
+    ERGW -->|"③ HARD CAP 1,000<br/>(Azure → on-prem advertise)"| MSEE
+    ERGW <--> ENGINE
 
-    B2 -->|"⑨ BGP-over-IPsec<br/>~4,000 prefixes"| VPNGW
-    VPNGW --> ENGINE
+    B2 <-->|"⑨ BGP-over-IPsec<br/>~4,000 prefixes"| VPNGW
+    VPNGW <--> ENGINE
 
     B3 -->|"SD-WAN overlay<br/>+ S2S IPsec"| SA
-    SA -->|"⑩ 4 peers max<br/>⑪ 10,000 per peer"| ENGINE
+    SA <-->|"⑩ 4 peers max<br/>⑪ 10,000 per peer"| ENGINE
 
-    ENGINE -->|"vWAN connection<br/>⑬ 200 prefix max"| SB
-    ENGINE -->|"vWAN connection<br/>⑬ 200 prefix max"| SC
-    ENGINE --> SA
+    ENGINE <-->|"VNet peering<br/>⑬ 200 prefix max"| SB
+    ENGINE <-->|"VNet peering<br/>⑬ 200 prefix max"| SC
+    ENGINE <-->|"VNet peering<br/>(SD-WAN spoke)"| SA
 
     classDef cap fill:#fee,stroke:#900,stroke-width:2px,color:#900
     classDef hub fill:#fef3c7,stroke:#92400e,stroke-width:2px
@@ -72,7 +73,7 @@ flowchart TB
 |---|---|---|---|
 | ① | **vWAN hub route engine** | **~10,000 effective routes** total | Silent route drops, asymmetric paths |
 | ② | **CE → MSEE (ER circuit)** | **4,000 (Std)** / **10,000 (Prem)** prefixes | Circuit BGP session drops |
-| ③ | **MSEE → ER Gateway** ⚠️ | **1,000 prefixes** hard cap | ER GW BGP drops → whole ER attachment down |
+| ③ | **ER Gateway → MSEE** ⚠️ | **1,000 prefixes** hard cap (Azure-side routes advertised out to on-prem) | ER GW BGP drops → whole ER attachment down |
 | ④ | **ER GW scale units** | 1 SU = 2 Gbps, max 10 SU = 20 Gbps | Throughput throttled |
 | ⑤ | **ER connections per hub** | 8 circuits | Cannot attach more |
 | ⑥ | **VPN GW scale units** | 1 SU = 500 Mbps, max 20 SU = 20 Gbps | Throughput throttled |
@@ -84,7 +85,7 @@ flowchart TB
 | ⑫ | **VNet connections per hub** | 500 | Cannot attach more spokes |
 | ⑬ | **Prefixes per VNet connection** | 200 | Extra prefixes ignored |
 
-> ⚠️ The **MSEE → ER Gateway** hop (③) is the **most under-appreciated cap** — it's tighter than the circuit itself. You can buy a Premium 10k circuit and still have the ER GW drop the BGP session at 1,000 routes.
+> ⚠️ The **ER Gateway → MSEE** hop (③) is the **most under-appreciated cap** — it's tighter than the circuit itself. The ER GW can only advertise up to **1,000 Azure-side prefixes** out to the MSEE. Exceed it and the BGP session drops — taking the whole ER attachment with it, regardless of whether you bought a Premium 10k circuit.
 
 ---
 
@@ -147,7 +148,8 @@ flowchart TB
 
 | Path | On-prem lever | Azure lever |
 |---|---|---|
-| **ER → ER GW** (③ 1k cap is the killer) | **[1]** Summarize aggressively — must stay <1,000 routes | **[3]** Deny /32s and host routes as safety net |
+| **ER GW → MSEE** (③ 1k cap on Azure-advertised prefixes) | — (this is Azure-side) | **[1][4]** Aggregate VNet/hub prefixes before re-advertise; **[3]** deny /32s |
+| **On-prem CE → MSEE** (② 4k Std / 10k Prem) | **[1]** Summarize aggressively on-prem | **[3]** Deny /32s and host routes as safety net |
 | **VPN → VPN GW** (~4k) | **[2]** Disjoint — VPN carries only branches NOT reachable via ER | **[3]** Deny anything overlapping ER advertisements |
 | **SD-WAN NVA → vHub** (10k dominant) | **[1]** Summarize overlay prefixes at the NVA | **[3]** Community-match to drop SD-WAN routes duplicating ER/VPN |
 | **Hub → spokes & branches** | — | **[4]** Re-aggregate to reduce branch device RIB load |

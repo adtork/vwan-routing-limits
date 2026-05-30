@@ -57,7 +57,7 @@ flowchart TB
 
     ENGINE <-->|"VNet peering"| SB
     ENGINE <-->|"VNet peering"| SC
-    ENGINE <-->|"VNet peering<br/>⑬ 200 prefix max<br/>(SD-WAN spoke w/ BGP)"| SA
+    ENGINE <-->|"VNet peering<br/>(SD-WAN spoke — BGP runs<br/>between NVA and hub, not over peering)"| SA
 
     classDef cap fill:#fee,stroke:#900,stroke-width:2px,color:#900
     classDef hub fill:#fef3c7,stroke:#92400e,stroke-width:2px
@@ -97,7 +97,7 @@ flowchart LR
     B["VPN BGP<br/>≤ 4,000 (⑨)"] --> H
     C["SD-WAN NVA BGP<br/>≤ 10,000 (⑪) 🔥 dominant"] --> H
 
-    H --> X[["Σ theoretical = up to 24,000<br/>✗ OVER by 140%"]]
+    H --> X[["🚨 Hard ceiling: 10,000 routes<br/>Exceed → BGP flaps<br/>routes not injected/installed"]]
 
     note["Plain VNet peering (Spokes B, C)<br/>contributes NO BGP routes<br/>— only the spoke's own address space"]
 
@@ -107,7 +107,7 @@ flowchart LR
     class note info
 ```
 
-Worst-case if every BGP source advertises at its cap (Premium ER) → ~24,000 routes against a 10,000 ceiling. **Filtering at ingress is mandatory, not optional.**
+Worst-case if every BGP source advertises at its cap (Premium ER) → ~24,000 routes converging on a **10,000-route hard ceiling**. Once the hub exceeds 10k, **BGP sessions flap and routes are not injected or installed** — silent reachability loss. **Filtering at ingress is mandatory, not optional.**
 
 > Note: the **1K cap on the ER GW is outbound only** (GW → MSEE). It limits what Azure advertises *out* to on-prem — it does **not** bound how many on-prem routes the hub *receives*. Inbound from on-prem is bounded by the circuit SKU (② 4k Std / 10k Prem).
 

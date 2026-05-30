@@ -65,6 +65,8 @@ flowchart TB
     class Hub hub
 ```
 
+> **🧭 Multi-hub note:** All limits below are **per virtual hub**. In a multi-hub vWAN (one hub per region, each with its own ExpressRoute / VPN / SD-WAN branches), the same constraints apply *independently* to every hub — ① 10k hub route ceiling, ③ 1k ER GW → MSEE outbound, ④ 9,500 ER GW inbound, ⑦ 4k VPN GW aggregate, ⑨/⑩ NVA BGP peers, etc. Hub-to-hub propagation also counts: prefixes learned in hub A and propagated to hub B consume slots in hub B's route table, so a chatty region can push another region toward its ① ceiling. Plan summarization and inbound route-maps **at every hub**, not just the busiest one.
+
 ---
 
 ## Route-Limit Cheat Sheet

@@ -39,8 +39,8 @@ flowchart TB
 
     subgraph Spokes["📦 SPOKE VNETs"]
         SA["Spoke A<br/>SD-WAN NVA<br/>ASN 65020"]
-        SB["Spoke B<br/>IaaS VMs"]
-        SC["Spoke C<br/>IaaS VMs"]
+        SB["Spoke B<br/>IaaS VMs<br/>(plain VNet peering)"]
+        SC["Spoke C<br/>IaaS VMs<br/>(plain VNet peering)"]
     end
 
     B1 -->|"② BGP inbound<br/>Std 4k / Prem 10k"| ERC
@@ -55,9 +55,9 @@ flowchart TB
     B3 -->|"SD-WAN overlay<br/>+ S2S IPsec"| SA
     SA <-->|"⑩ 4 peers max<br/>⑪ 10,000 per peer"| ENGINE
 
-    ENGINE <-->|"VNet peering<br/>⑬ 200 prefix max"| SB
-    ENGINE <-->|"VNet peering<br/>⑬ 200 prefix max"| SC
-    ENGINE <-->|"VNet peering<br/>(SD-WAN spoke)"| SA
+    ENGINE <-->|"VNet peering"| SB
+    ENGINE <-->|"VNet peering"| SC
+    ENGINE <-->|"VNet peering<br/>⑬ 200 prefix max<br/>(SD-WAN spoke w/ BGP)"| SA
 
     classDef cap fill:#fee,stroke:#900,stroke-width:2px,color:#900
     classDef hub fill:#fef3c7,stroke:#92400e,stroke-width:2px
